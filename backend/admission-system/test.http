@@ -28,3 +28,612 @@ Content-Type: application/json
 
 ### 3. 测试删除专业（应该报错）
 DELETE http://localhost:8080/major/delete/CS01
+
+### 4. 录入初试成绩
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024001",
+  "politics": 75,
+  "english": 68,
+  "professionalBase": 120
+}
+
+### 5. 筛选复试名单（例如：政治≥60，英语≥60，专业基础≥90，总分≥250）
+GET http://localhost:8080/first_score/check?politicsLine=60&englishLine=60&professionalBaseLine=90&totalScoreLine=250
+
+### 6. 录入复试成绩
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024001",
+  "professional": 85,
+  "interview": 90,
+  "computerTest": 88
+}
+
+### 7. 生成录取名单（总分线 360 分，例如：初试263 + 复试263 = 526）
+POST http://localhost:8080/admission/generate?totalScoreLine=360
+
+### 8. 查询录取名单
+GET http://localhost:8080/admission/list
+
+
+### 9. 各科成绩统计
+GET http://localhost:8080/stats/subject
+
+### 10. 分数段统计
+GET http://localhost:8080/stats/segment
+
+### 11. 录取生源分析
+GET http://localhost:8080/stats/admission
+
+### 12. 触发 /stats/admission 报错（用于查看 SQL 日志）
+GET http://localhost:8080/stats/admission
+
+### ============================================
+### 第一步：添加 3 个专业
+### ============================================
+
+### 1. 添加专业 CS01 (计算机科学与技术)
+POST http://localhost:8080/major/add
+Content-Type: application/json
+
+{
+  "majorCode": "CS01",
+  "majorName": "计算机科学与技术",
+  "planInside": 25,
+  "planOutside": 5
+}
+
+### 2. 添加专业 CS02 (软件工程)
+POST http://localhost:8080/major/add
+Content-Type: application/json
+
+{
+  "majorCode": "CS02",
+  "majorName": "软件工程",
+  "planInside": 20,
+  "planOutside": 5
+}
+
+### 3. 添加专业 CS03 (网络工程)
+POST http://localhost:8080/major/add
+Content-Type: application/json
+
+{
+  "majorCode": "CS03",
+  "majorName": "网络工程",
+  "planInside": 15,
+  "planOutside": 3
+}
+
+### ============================================
+### 第二步：添加 6 个考生 (每个专业 2 个)
+### ============================================
+
+### 4. 考生 2024001 (计算机)
+POST http://localhost:8080/student/add
+Content-Type: application/json
+
+{
+  "examId": "2024001",
+  "name": "张三",
+  "gender": "男",
+  "age": 22,
+  "political": "共青团员",
+  "isFresh": 1,
+  "education": "本科",
+  "source": "大连民族大学",
+  "majorCode": "CS01",
+  "type": "全日制"
+}
+
+### 5. 考生 2024002 (计算机)
+POST http://localhost:8080/student/add
+Content-Type: application/json
+
+{
+  "examId": "2024002",
+  "name": "李四",
+  "gender": "女",
+  "age": 23,
+  "political": "中共党员",
+  "isFresh": 0,
+  "education": "本科",
+  "source": "辽宁大学",
+  "majorCode": "CS01",
+  "type": "全日制"
+}
+
+### 6. 考生 2024003 (软件工程)
+POST http://localhost:8080/student/add
+Content-Type: application/json
+
+{
+  "examId": "2024003",
+  "name": "王五",
+  "gender": "男",
+  "age": 21,
+  "political": "共青团员",
+  "isFresh": 1,
+  "education": "本科",
+  "source": "东北大学",
+  "majorCode": "CS02",
+  "type": "全日制"
+}
+
+### 7. 考生 2024004 (软件工程)
+POST http://localhost:8080/student/add
+Content-Type: application/json
+
+{
+  "examId": "2024004",
+  "name": "赵六",
+  "gender": "女",
+  "age": 24,
+  "political": "共青团员",
+  "isFresh": 0,
+  "education": "本科",
+  "source": "大连理工大学",
+  "majorCode": "CS02",
+  "type": "全日制"
+}
+
+### 8. 考生 2024005 (网络工程)
+POST http://localhost:8080/student/add
+Content-Type: application/json
+
+{
+  "examId": "2024005",
+  "name": "孙七",
+  "gender": "男",
+  "age": 22,
+  "political": "共青团员",
+  "isFresh": 1,
+  "education": "本科",
+  "source": "大连海事大学",
+  "majorCode": "CS03",
+  "type": "全日制"
+}
+
+### 9. 考生 2024006 (网络工程)
+POST http://localhost:8080/student/add
+Content-Type: application/json
+
+{
+  "examId": "2024006",
+  "name": "周八",
+  "gender": "女",
+  "age": 23,
+  "political": "中共党员",
+  "isFresh": 0,
+  "education": "本科",
+  "source": "大连大学",
+  "majorCode": "CS03",
+  "type": "全日制"
+}
+
+### ============================================
+### 第三步：录入初试成绩 (按考生顺序)
+### ============================================
+
+### 10. 2024001 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024001",
+  "politics": 75,
+  "english": 68,
+  "professionalBase": 120
+}
+
+### 11. 2024002 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024002",
+  "politics": 82,
+  "english": 70,
+  "professionalBase": 135
+}
+
+### 12. 2024003 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024003",
+  "politics": 60,
+  "english": 55,
+  "professionalBase": 90
+}
+
+### 13. 2024004 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024004",
+  "politics": 78,
+  "english": 72,
+  "professionalBase": 110
+}
+
+### 14. 2024005 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024005",
+  "politics": 65,
+  "english": 60,
+  "professionalBase": 85
+}
+
+### 15. 2024006 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024006",
+  "politics": 88,
+  "english": 75,
+  "professionalBase": 140
+}
+
+### ============================================
+### 第四步：录入复试成绩 (全部高分通过)
+### ============================================
+
+### 16. 2024001 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024001",
+  "professional": 85,
+  "interview": 90,
+  "computerTest": 88
+}
+
+### 17. 2024002 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024002",
+  "professional": 92,
+  "interview": 85,
+  "computerTest": 90
+}
+
+### 18. 2024003 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024003",
+  "professional": 70,
+  "interview": 75,
+  "computerTest": 80
+}
+
+### 19. 2024004 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024004",
+  "professional": 88,
+  "interview": 82,
+  "computerTest": 85
+}
+
+### 20. 2024005 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024005",
+  "professional": 78,
+  "interview": 80,
+  "computerTest": 75
+}
+
+### 21. 2024006 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024006",
+  "professional": 95,
+  "interview": 88,
+  "computerTest": 92
+}
+
+### ============================================
+### 第五步：生成录取名单
+### ============================================
+
+### 22. 生成录取名单 (总分线 500 分)
+POST http://localhost:8080/admission/generate?totalScoreLine=500
+
+### ============================================
+### 补全：为剩余 5 个考生录入初试成绩
+### ============================================
+
+### 2024002 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024002",
+  "politics": 82,
+  "english": 70,
+  "professionalBase": 135
+}
+
+### 2024003 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024003",
+  "politics": 60,
+  "english": 55,
+  "professionalBase": 90
+}
+
+### 2024004 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024004",
+  "politics": 78,
+  "english": 72,
+  "professionalBase": 110
+}
+
+### 2024005 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024005",
+  "politics": 65,
+  "english": 60,
+  "professionalBase": 85
+}
+
+### 2024006 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024006",
+  "politics": 88,
+  "english": 75,
+  "professionalBase": 140
+}
+
+### ============================================
+### 补全：为剩余 5 个考生录入复试成绩
+### ============================================
+
+### 2024002 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024002",
+  "professional": 92,
+  "interview": 85,
+  "computerTest": 90
+}
+
+### 2024003 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024003",
+  "professional": 70,
+  "interview": 75,
+  "computerTest": 80
+}
+
+### 2024004 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024004",
+  "professional": 88,
+  "interview": 82,
+  "computerTest": 85
+}
+
+### 2024005 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024005",
+  "professional": 78,
+  "interview": 80,
+  "computerTest": 75
+}
+
+### 2024006 复试
+POST http://localhost:8080/second_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024006",
+  "professional": 95,
+  "interview": 88,
+  "computerTest": 92
+}
+
+### ============================================
+### 最终步：重新生成录取名单（调低分数线，确保所有人都被录取）
+### ============================================
+
+### 生成录取名单 (总分线 300 分，让 6 个考生全部被录取)
+POST http://localhost:8080/admission/generate?totalScoreLine=300
+
+
+### ============================================
+### 快速修复：补全初试成绩，生成录取名单
+### ============================================
+
+### 1. 补全 2024001 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024001",
+  "politics": 75,
+  "english": 68,
+  "professionalBase": 120
+}
+
+### 2. 补全 2024002 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024002",
+  "politics": 82,
+  "english": 70,
+  "professionalBase": 135
+}
+
+### 3. 补全 2024003 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024003",
+  "politics": 60,
+  "english": 55,
+  "professionalBase": 90
+}
+
+### 4. 补全 2024004 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024004",
+  "politics": 78,
+  "english": 72,
+  "professionalBase": 110
+}
+
+### 5. 补全 2024005 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024005",
+  "politics": 65,
+  "english": 60,
+  "professionalBase": 85
+}
+
+### 6. 补全 2024006 初试
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024006",
+  "politics": 88,
+  "english": 75,
+  "professionalBase": 140
+}
+
+### 7. 重新生成录取名单（总分线 10 分，确保所有人都能录取）
+POST http://localhost:8080/admission/generate?totalScoreLine=10
+
+### ============================================
+### 一键修复：补全初试成绩并生成录取名单
+### ============================================
+
+### 1. 清空现有的录取名单（确保不冲突）
+DELETE FROM admission;
+
+### 2. 补全 2024001 初试成绩
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024001",
+  "politics": 75,
+  "english": 68,
+  "professionalBase": 120
+}
+
+### 3. 补全 2024002 初试成绩
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024002",
+  "politics": 82,
+  "english": 70,
+  "professionalBase": 135
+}
+
+### 4. 补全 2024003 初试成绩
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024003",
+  "politics": 60,
+  "english": 55,
+  "professionalBase": 90
+}
+
+### 5. 补全 2024004 初试成绩
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024004",
+  "politics": 78,
+  "english": 72,
+  "professionalBase": 110
+}
+
+### 6. 补全 2024005 初试成绩
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024005",
+  "politics": 65,
+  "english": 60,
+  "professionalBase": 85
+}
+
+### 7. 补全 2024006 初试成绩
+POST http://localhost:8080/first_score/save
+Content-Type: application/json
+
+{
+  "examId": "2024006",
+  "politics": 88,
+  "english": 75,
+  "professionalBase": 140
+}
+
+### 8. 生成录取名单（分数线设为 100 分，确保所有人都会被录取）
+POST http://localhost:8080/admission/generate?totalScoreLine=100
