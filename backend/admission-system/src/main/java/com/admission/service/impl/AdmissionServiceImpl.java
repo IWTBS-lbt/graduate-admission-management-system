@@ -2,27 +2,35 @@ package com.admission.service.impl;
 
 import com.admission.entity.Admission;
 import com.admission.entity.FirstScore;
+import com.admission.entity.Major;
 import com.admission.entity.SecondScore;
+import com.admission.entity.Student;
 import com.admission.mapper.AdmissionMapper;
 import com.admission.mapper.FirstScoreMapper;
+import com.admission.mapper.MajorMapper;
 import com.admission.mapper.SecondScoreMapper;
+import com.admission.mapper.StudentMapper;
 import com.admission.service.AdmissionService;
+import com.admission.vo.AdmissionVO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class AdmissionServiceImpl extends ServiceImpl<AdmissionMapper, Admission> implements AdmissionService {
 
-    @Autowired
-    private FirstScoreMapper firstScoreMapper;
-
-    @Autowired
-    private SecondScoreMapper secondScoreMapper;
+    private final FirstScoreMapper firstScoreMapper;
+    private final SecondScoreMapper secondScoreMapper;
+    private final StudentMapper studentMapper;
+    private final MajorMapper majorMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -30,13 +38,32 @@ public class AdmissionServiceImpl extends ServiceImpl<AdmissionMapper, Admission
         // 1. 先清空旧名单
         this.remove(null);
 
-        // 2. 获取所有考生成绩
+        // 2. 获取所有初试成绩
         List<FirstScore> firstScores = firstScoreMapper.selectList(null);
-        List<Admission> admissionList = new ArrayList<>();
 
+        // 3. 批量查询复试成绩，构建 Map（避免 N+1 查询）
+        List<String> examIds = firstScores.stream()
+                .map(FirstScore::getExamId)
+                .collect(Collectors.toList());
+        List<SecondScore> secondScores = secondScoreMapper.selectBatchIds(examIds);
+        Map<String, SecondScore> secondScoreMap = secondScores.stream()
+                .collect(Collectors.toMap(SecondScore::getExamId, s -> s));
+
+        // 4. 批量查询考生信息，获取 major_code
+        List<Student> students = studentMapper.selectBatchIds(examIds);
+        Map<String, String> majorCodeMap = students.stream()
+                .collect(Collectors.toMap(Student::getExamId, Student::getMajorCode));
+
+        // 5. 批量查询专业信息，构建 major_code → major_name 映射
+        List<Major> majors = majorMapper.selectList(null);
+        Map<String, String> majorNameMap = majors.stream()
+                .collect(Collectors.toMap(Major::getMajorCode, Major::getMajorName));
+
+        // 6. 生成录取名单
+        List<Admission> admissionList = new ArrayList<>();
         for (FirstScore firstScore : firstScores) {
             String examId = firstScore.getExamId();
-            SecondScore secondScore = secondScoreMapper.selectById(examId);
+            SecondScore secondScore = secondScoreMap.get(examId);
             if (secondScore == null) continue;
 
             Integer total = firstScore.getTotal() + secondScore.getTotal();
@@ -46,17 +73,31 @@ public class AdmissionServiceImpl extends ServiceImpl<AdmissionMapper, Admission
                 admission.setFirstTotal(firstScore.getTotal());
                 admission.setSecondTotal(secondScore.getTotal());
                 admission.setIsAdmitted(1);
-                admission.setDepartment("待定");
+                // 根据考生报考专业自动填充系别
+                String majorCode = majorCodeMap.getOrDefault(examId, "");
+                admission.setDepartment(majorNameMap.getOrDefault(majorCode, "待定"));
                 admissionList.add(admission);
             }
         }
 
-        // 3. 保存新名单
+        // 7. 保存新名单
         if (!admissionList.isEmpty()) {
             this.saveBatch(admissionList);
         }
 
-        // 4. ⚠️ 直接返回最新生成的名单（关键！）
+        // 8. 返回最新生成的名单
         return this.list();
+    }
+
+    @Override
+    public Page<AdmissionVO> getDetailList(int page, int pageSize) {
+        Page<AdmissionVO> p = new Page<>(page, pageSize);
+        List<AdmissionVO> list = baseMapper.selectDetailList(p);
+        return p.setRecords(list);
+    }
+
+    @Override
+    public List<AdmissionVO> getAllDetail() {
+        return baseMapper.selectAllDetail();
     }
 }

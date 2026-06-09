@@ -6,16 +6,34 @@ import com.admission.mapper.MajorMapper;
 import com.admission.mapper.StudentMapper;
 import com.admission.service.MajorService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service // ⚠️ 必须有这个注解，否则 Spring 找不到它
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
 public class MajorServiceImpl extends ServiceImpl<MajorMapper, Major> implements MajorService {
 
-    @Autowired
-    private StudentMapper studentMapper;
+    private final StudentMapper studentMapper;
+
+    @Override
+    public Page<Major> searchByKeyword(String keyword, Integer page, Integer pageSize) {
+        LambdaQueryWrapper<Major> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(Major::getMajorCode, keyword)
+                .or()
+                .like(Major::getMajorName, keyword);
+        return this.page(new Page<>(page, pageSize), wrapper);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateMajor(Major major) {
+        return this.updateById(major);
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)

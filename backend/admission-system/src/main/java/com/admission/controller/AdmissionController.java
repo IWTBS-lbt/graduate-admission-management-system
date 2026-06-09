@@ -3,23 +3,27 @@ package com.admission.controller;
 import com.admission.common.Result;
 import com.admission.entity.Admission;
 import com.admission.service.AdmissionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.admission.utils.CsvUtils;
+import com.admission.vo.AdmissionVO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 @RequestMapping("/admission")
 public class AdmissionController {
 
-    @Autowired
-    private AdmissionService admissionService;
+    private final AdmissionService admissionService;
 
     @PostMapping("/generate")
     public Result generateAdmissionList(@RequestParam Integer totalScoreLine) {
         try {
-            // ⚠️ 直接接收 Service 返回的最新数据
             List<Admission> list = admissionService.generateAdmissionList(totalScoreLine);
             return Result.success(list);
         } catch (Exception e) {
@@ -28,7 +32,39 @@ public class AdmissionController {
     }
 
     @GetMapping("/list")
-    public Result list() {
-        return Result.success(admissionService.list());
+    public Result list(@RequestParam(defaultValue = "1") Integer page,
+                       @RequestParam(defaultValue = "10") Integer pageSize) {
+        return Result.success(admissionService.page(new Page<>(page, pageSize)));
+    }
+
+    /**
+     * 录取名单详情（含考生姓名、专业名称）
+     */
+    @GetMapping("/detail")
+    public Result detail(@RequestParam(defaultValue = "1") Integer page,
+                         @RequestParam(defaultValue = "10") Integer pageSize) {
+        return Result.success(admissionService.getDetailList(page, pageSize));
+    }
+
+    /**
+     * 导出录取名单 CSV
+     */
+    @GetMapping("/export")
+    public void export(HttpServletResponse response) throws IOException {
+        List<AdmissionVO> list = admissionService.getAllDetail();
+        String[] headers = {"考号", "姓名", "报考专业", "初试总分", "复试总分", "综合总分", "录取系别", "录取状态"};
+        List<String[]> rows = list.stream()
+                .map(v -> new String[]{
+                        v.getExamId(),
+                        v.getName(),
+                        v.getMajorName(),
+                        String.valueOf(v.getFirstTotal()),
+                        String.valueOf(v.getSecondTotal()),
+                        String.valueOf(v.getTotalScore()),
+                        v.getDepartment(),
+                        v.getIsAdmitted() == 1 ? "已录取" : "未录取"
+                })
+                .collect(Collectors.toList());
+        CsvUtils.writeCsv(response, "录取名单", headers, rows);
     }
 }

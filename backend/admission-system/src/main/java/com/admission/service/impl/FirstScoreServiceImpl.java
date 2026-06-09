@@ -4,18 +4,18 @@ import com.admission.entity.FirstScore;
 import com.admission.mapper.FirstScoreMapper;
 import com.admission.service.FirstScoreService;
 import com.admission.vo.FirstScoreVO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class FirstScoreServiceImpl extends ServiceImpl<FirstScoreMapper, FirstScore> implements FirstScoreService {
-
-    @Autowired
-    private FirstScoreMapper firstScoreMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -27,8 +27,15 @@ public class FirstScoreServiceImpl extends ServiceImpl<FirstScoreMapper, FirstSc
     @Override
     public List<FirstScoreVO> getEligibleList(Integer politicsLine, Integer englishLine,
                                               Integer professionalBaseLine, Integer totalScoreLine) {
-        return firstScoreMapper.selectEligibleStudents(
+        return baseMapper.selectEligibleStudents(
                 politicsLine, englishLine, professionalBaseLine, totalScoreLine
         );
+    }
+
+    @Override
+    public Page<FirstScore> searchByKeyword(String keyword, Integer page, Integer pageSize) {
+        LambdaQueryWrapper<FirstScore> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(FirstScore::getExamId, keyword);
+        return this.page(new Page<>(page, pageSize), wrapper);
     }
 }

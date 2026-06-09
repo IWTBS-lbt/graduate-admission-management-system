@@ -10,23 +10,20 @@ import com.admission.vo.AdmissionStatsVO;
 import com.admission.vo.ScoreSegmentVO;
 import com.admission.vo.SubjectStatsVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class StatsServiceImpl implements StatsService {
 
-    @Autowired
-    private FirstScoreMapper firstScoreMapper;
+    private final FirstScoreMapper firstScoreMapper;
 
-    @Autowired
-    private StudentMapper studentMapper;
+    private final StudentMapper studentMapper;
 
-    // 新增注入专业Mapper
-    @Autowired
-    private MajorMapper majorMapper;
+    private final MajorMapper majorMapper;
 
     @Override
     public Map<String, SubjectStatsVO> getSubjectStats() {
@@ -60,7 +57,7 @@ public class StatsServiceImpl implements StatsService {
     public List<ScoreSegmentVO> getScoreSegmentStats() {
         List<ScoreSegmentVO> list = firstScoreMapper.getScoreSegmentStats();
         // 计算占比
-        Integer total = list.stream().mapToInt(ScoreSegmentVO::getCount).sum();
+        int total = list.stream().mapToInt(vo -> vo.getCount() != null ? vo.getCount() : 0).sum();
         if (total > 0) {
             for (ScoreSegmentVO vo : list) {
                 vo.setPercentage(vo.getCount() * 1.0 / total);
@@ -81,34 +78,30 @@ public class StatsServiceImpl implements StatsService {
     }
 
     /**
-     * 新增：各专业招生计划与实际录取对比统计
+     * 各专业招生计划与实际录取对比统计
      */
-    // ========== 新增方法（已修复） ==========
     @Override
     public Map<String, Object> getPlanVsActualStats() {
-        // 1. 获取所有专业的计划招生数
         List<Major> majors = majorMapper.selectList(null);
-        // 2. 统计每个专业实际录取人数
-        // ⚠️ 注意：这里要把 Map<String, Integer> 改为 Map<String, Long>
+
         Map<String, Long> actualMap = new HashMap<>();
         for (Major major : majors) {
             LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(Student::getMajorCode, major.getMajorCode());
-            // ⚠️ 这里关键：把 "exam_id" 改为 Student::getExamId
             wrapper.inSql(Student::getExamId, "SELECT exam_id FROM admission WHERE is_admitted = 1");
-            // ⚠️ 这里：把 int 改为 Long
             Long actual = studentMapper.selectCount(wrapper);
             actualMap.put(major.getMajorCode(), actual);
         }
 
-        // 3. 组装返回数据
         List<Map<String, Object>> result = new ArrayList<>();
         for (Major major : majors) {
             Map<String, Object> item = new HashMap<>();
             item.put("majorName", major.getMajorName());
             item.put("planInside", major.getPlanInside());
             item.put("planOutside", major.getPlanOutside());
-            item.put("planTotal", major.getPlanInside() + major.getPlanOutside());
+            int planTotal = (major.getPlanInside() != null ? major.getPlanInside() : 0)
+                           + (major.getPlanOutside() != null ? major.getPlanOutside() : 0);
+            item.put("planTotal", planTotal);
             item.put("actual", actualMap.getOrDefault(major.getMajorCode(), 0L));
             result.add(item);
         }

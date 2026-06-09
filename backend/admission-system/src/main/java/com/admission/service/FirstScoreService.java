@@ -2,6 +2,7 @@ package com.admission.service;
 
 import com.admission.entity.FirstScore;
 import com.admission.vo.FirstScoreVO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -18,4 +19,9 @@ public interface FirstScoreService extends IService<FirstScore> {
      */
     List<FirstScoreVO> getEligibleList(Integer politicsLine, Integer englishLine,
                                        Integer professionalBaseLine, Integer totalScoreLine);
+
+    /**
+     * 按考号模糊搜索（分页）
+     */
+    Page<FirstScore> searchByKeyword(String keyword, Integer page, Integer pageSize);
 }

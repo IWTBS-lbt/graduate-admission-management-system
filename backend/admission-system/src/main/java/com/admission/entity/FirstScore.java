@@ -1,5 +1,7 @@
 package com.admission.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -13,6 +15,7 @@ public class FirstScore {
     private Integer english;
     private Integer professionalBase;
 
-    // ✅ 只保留字段，删掉 @TableField(insert = "false", update = "false")
+    // MySQL GENERATED ALWAYS AS (...) STORED 计算列，禁止 INSERT/UPDATE
+    @TableField(insertStrategy = FieldStrategy.NEVER, updateStrategy = FieldStrategy.NEVER)
     private Integer total;
 }
