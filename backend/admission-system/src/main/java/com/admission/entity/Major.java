@@ -13,6 +13,7 @@ public class Major {
     private String majorCode;   // 对应数据库列：major_code
 
     private String majorName;   // 对应：major_name
+    private String department;  // 对应：department（所属院系）
     private Integer planInside; // 对应：plan_inside
     private Integer planOutside;// 对应：plan_outside
 }

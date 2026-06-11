@@ -39,13 +39,15 @@ public class MajorController {
         LambdaQueryWrapper<Major> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(Major::getMajorCode, keyword.trim())
                 .or()
-                .like(Major::getMajorName, keyword.trim());
+                .like(Major::getMajorName, keyword.trim())
+                .or()
+                .like(Major::getDepartment, keyword.trim());
         List<Major> list = majorService.page(new Page<>(1, 10), wrapper).getRecords();
         List<Map<String, String>> result = list.stream()
                 .map(m -> {
                     Map<String, String> item = new HashMap<>();
                     item.put("value", m.getMajorCode());
-                    item.put("label", m.getMajorCode() + " - " + m.getMajorName());
+                    item.put("label", m.getMajorCode() + " - " + m.getMajorName() + " (" + (m.getDepartment() != null ? m.getDepartment() : "") + ")");
                     return item;
                 })
                 .collect(Collectors.toList());

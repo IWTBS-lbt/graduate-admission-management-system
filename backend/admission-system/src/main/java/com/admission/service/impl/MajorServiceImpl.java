@@ -25,7 +25,9 @@ public class MajorServiceImpl extends ServiceImpl<MajorMapper, Major> implements
         LambdaQueryWrapper<Major> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(Major::getMajorCode, keyword)
                 .or()
-                .like(Major::getMajorName, keyword);
+                .like(Major::getMajorName, keyword)
+                .or()
+                .like(Major::getDepartment, keyword);
         return this.page(new Page<>(page, pageSize), wrapper);
     }
 
