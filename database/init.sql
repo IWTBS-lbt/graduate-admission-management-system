@@ -1,9 +1,31 @@
+-- 系统用户表
+CREATE TABLE IF NOT EXISTS `user`(
+    id INT AUTO_INCREMENT PRIMARY KEY COMMENT '用户ID',
+    username VARCHAR(32) NOT NULL UNIQUE COMMENT '用户名',
+    password VARCHAR(64) NOT NULL COMMENT '密码',
+    role VARCHAR(16) DEFAULT 'admin' COMMENT '角色'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户';
+
+-- 插入默认管理员账号（密码明文，首次登录后自动升级为 BCrypt 加密）
+INSERT INTO `user` (username, password, role) VALUES ('admin', '123456', 'admin');
+
+-- 院系字典表
+CREATE TABLE IF NOT EXISTS department(
+    id INT AUTO_INCREMENT PRIMARY KEY COMMENT '院系ID',
+    name VARCHAR(64) NOT NULL UNIQUE COMMENT '院系名称'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='院系字典';
+
+-- 插入默认院系
+INSERT INTO department (name) VALUES ('计算机学院'),('软件学院'),('人工智能学院'),('信息与通信学院'),('自动化学院'),('数学与统计学院'),('管理学院');
+
 -- 专业字典表
 CREATE TABLE IF NOT EXISTS major(
     major_code VARCHAR(32) PRIMARY KEY COMMENT '专业代码',
     major_name VARCHAR(64) NOT NULL COMMENT '专业名称',
+    department VARCHAR(64) COMMENT '所属院系',
     plan_inside INT DEFAULT 0 COMMENT '计划内招生数',
-    plan_outside INT DEFAULT 0 COMMENT '计划外招生数'
+    plan_outside INT DEFAULT 0 COMMENT '计划外招生数',
+    cutoff_line INT DEFAULT NULL COMMENT '录取分数线（初试+复试总分最低线）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='专业字典';
 
 -- 考生档案表
