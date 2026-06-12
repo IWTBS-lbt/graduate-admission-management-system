@@ -16,4 +16,5 @@ public class Major {
     private String department;  // 对应：department（所属院系）
     private Integer planInside; // 对应：plan_inside
     private Integer planOutside;// 对应：plan_outside
+    private Integer cutoffLine; // 对应：cutoff_line（录取分数线）
 }

@@ -75,4 +75,23 @@ public class MajorController {
             return Result.fail(e.getMessage());
         }
     }
+
+    /**
+     * 批量保存专业录取分数线
+     */
+    @PutMapping("/batch-cutoff")
+    public Result updateBatchCutoff(@RequestBody List<Major> majors) {
+        if (majors == null || majors.isEmpty()) {
+            return Result.fail("数据不能为空");
+        }
+        // 只保留 majorCode + cutoffLine，避免误更新其他字段
+        List<Major> updates = majors.stream().map(m -> {
+            Major u = new Major();
+            u.setMajorCode(m.getMajorCode());
+            u.setCutoffLine(m.getCutoffLine());
+            return u;
+        }).collect(Collectors.toList());
+        majorService.updateBatchById(updates);
+        return Result.success(null);
+    }
 }

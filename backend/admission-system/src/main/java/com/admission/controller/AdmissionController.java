@@ -22,9 +22,9 @@ public class AdmissionController {
     private final AdmissionService admissionService;
 
     @PostMapping("/generate")
-    public Result generateAdmissionList(@RequestParam Integer totalScoreLine) {
+    public Result generateAdmissionList() {
         try {
-            List<Admission> list = admissionService.generateAdmissionList(totalScoreLine);
+            List<Admission> list = admissionService.generateAdmissionList();
             return Result.success(list);
         } catch (Exception e) {
             return Result.fail("生成录取名单失败: " + e.getMessage());
@@ -52,16 +52,16 @@ public class AdmissionController {
     @GetMapping("/export")
     public void export(HttpServletResponse response) throws IOException {
         List<AdmissionVO> list = admissionService.getAllDetail();
-        String[] headers = {"考号", "姓名", "报考专业", "初试总分", "复试总分", "综合总分", "录取系别", "录取状态"};
+        String[] headers = {"录取系别", "报考专业", "考号", "姓名", "初试总分", "复试总分", "综合总分", "录取状态"};
         List<String[]> rows = list.stream()
                 .map(v -> new String[]{
+                        v.getDepartment(),
+                        v.getMajorName(),
                         v.getExamId(),
                         v.getName(),
-                        v.getMajorName(),
                         String.valueOf(v.getFirstTotal()),
                         String.valueOf(v.getSecondTotal()),
                         String.valueOf(v.getTotalScore()),
-                        v.getDepartment(),
                         v.getIsAdmitted() == 1 ? "已录取" : "未录取"
                 })
                 .collect(Collectors.toList());

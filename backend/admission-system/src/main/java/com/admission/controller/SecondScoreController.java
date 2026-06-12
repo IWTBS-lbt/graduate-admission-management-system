@@ -2,6 +2,8 @@ package com.admission.controller;
 
 import com.admission.common.Result;
 import com.admission.entity.SecondScore;
+import com.admission.entity.Student;
+import com.admission.mapper.StudentMapper;
 import com.admission.service.SecondScoreService;
 import com.admission.utils.CsvUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 public class SecondScoreController {
 
     private final SecondScoreService secondScoreService;
+    private final StudentMapper studentMapper;
 
     @PostMapping("/save")
     public Result saveScore(@RequestBody SecondScore secondScore) {
@@ -38,21 +41,39 @@ public class SecondScoreController {
     }
 
     /**
-     * 搜索自动补全：按考号模糊匹配已有复试成绩的考生
+     * 搜索自动补全：按考号或姓名模糊匹配已有复试成绩的考生
      */
     @GetMapping("/suggest")
     public Result suggest(@RequestParam String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return Result.success(Collections.emptyList());
         }
+        // 先查姓名匹配的考生
+        List<String> nameMatchedIds = studentMapper.selectList(
+            new LambdaQueryWrapper<Student>().like(Student::getName, keyword.trim())
+        ).stream().map(Student::getExamId).collect(Collectors.toList());
+
         LambdaQueryWrapper<SecondScore> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(SecondScore::getExamId, keyword.trim());
-        List<SecondScore> list = secondScoreService.page(new Page<>(1, 10), wrapper).getRecords();
+        if (!nameMatchedIds.isEmpty()) {
+            wrapper.or().in(SecondScore::getExamId, nameMatchedIds);
+        }
+        // 限制返回数量
+        wrapper.last("LIMIT 10");
+        List<SecondScore> list = secondScoreService.list(wrapper);
+
+        // 批量查姓名
+        List<String> allIds = list.stream().map(SecondScore::getExamId).collect(Collectors.toList());
+        Map<String, String> nameMap = allIds.isEmpty() ? Collections.emptyMap() :
+            studentMapper.selectBatchIds(allIds).stream()
+                .collect(Collectors.toMap(Student::getExamId, Student::getName));
+
         List<Map<String, String>> result = list.stream()
                 .map(s -> {
                     Map<String, String> item = new HashMap<>();
                     item.put("value", s.getExamId());
-                    item.put("label", s.getExamId());
+                    String name = nameMap.getOrDefault(s.getExamId(), "");
+                    item.put("label", name.isEmpty() ? s.getExamId() : s.getExamId() + " - " + name);
                     return item;
                 })
                 .collect(Collectors.toList());

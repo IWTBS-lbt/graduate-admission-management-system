@@ -33,12 +33,29 @@ public class StudentController {
 
     @GetMapping("/list")
     public Result list(@RequestParam(required = false) String keyword,
+                       @RequestParam(required = false) String political,
+                       @RequestParam(required = false) Integer isFresh,
+                       @RequestParam(required = false) String education,
+                       @RequestParam(required = false) String source,
+                       @RequestParam(required = false) String majorCode,
+                       @RequestParam(required = false) String type,
                        @RequestParam(defaultValue = "1") Integer page,
                        @RequestParam(defaultValue = "10") Integer pageSize) {
-        if (keyword == null || keyword.trim().isEmpty()) {
+        // 检查是否有任何筛选条件
+        boolean hasFilter = (keyword != null && !keyword.trim().isEmpty())
+                || (political != null && !political.trim().isEmpty())
+                || isFresh != null
+                || (education != null && !education.trim().isEmpty())
+                || (source != null && !source.trim().isEmpty())
+                || (majorCode != null && !majorCode.trim().isEmpty())
+                || (type != null && !type.trim().isEmpty());
+        if (!hasFilter) {
             return Result.success(studentService.page(new Page<>(page, pageSize)));
         }
-        return Result.success(studentService.searchByKeyword(keyword.trim(), page, pageSize));
+        return Result.success(studentService.search(
+                keyword != null ? keyword.trim() : null,
+                political, isFresh, education, source, majorCode, type,
+                page, pageSize));
     }
 
     @DeleteMapping("/delete/{examId}")
@@ -72,7 +89,7 @@ public class StudentController {
     }
 
     /**
-     * 搜索自动补全：按考号模糊匹配，返回前10条
+     * 搜索自动补全：按考号或姓名模糊匹配，返回前10条
      */
     @GetMapping("/suggest")
     public Result suggest(@RequestParam String keyword) {
@@ -80,7 +97,9 @@ public class StudentController {
             return Result.success(Collections.emptyList());
         }
         LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
-        wrapper.like(Student::getExamId, keyword.trim());
+        wrapper.like(Student::getExamId, keyword.trim())
+               .or()
+               .like(Student::getName, keyword.trim());
         List<Student> list = studentService.page(new Page<>(1, 10), wrapper).getRecords();
         List<Map<String, String>> result = list.stream()
                 .map(s -> {

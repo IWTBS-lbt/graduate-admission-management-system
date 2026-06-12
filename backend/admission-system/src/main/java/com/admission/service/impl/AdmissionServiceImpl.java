@@ -34,7 +34,7 @@ public class AdmissionServiceImpl extends ServiceImpl<AdmissionMapper, Admission
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<Admission> generateAdmissionList(Integer totalScoreLine) {
+    public List<Admission> generateAdmissionList() {
         // 1. 先清空旧名单
         this.remove(null);
 
@@ -54,27 +54,33 @@ public class AdmissionServiceImpl extends ServiceImpl<AdmissionMapper, Admission
         Map<String, String> majorCodeMap = students.stream()
                 .collect(Collectors.toMap(Student::getExamId, Student::getMajorCode));
 
-        // 5. 批量查询专业信息，构建 major_code → major_name 映射
+        // 5. 批量查询专业信息，构建两个 Map：cutoff 和 majorName
         List<Major> majors = majorMapper.selectList(null);
+        Map<String, Integer> cutoffMap = majors.stream()
+                .filter(m -> m.getCutoffLine() != null)
+                .collect(Collectors.toMap(Major::getMajorCode, Major::getCutoffLine));
         Map<String, String> majorNameMap = majors.stream()
                 .collect(Collectors.toMap(Major::getMajorCode, Major::getMajorName));
 
-        // 6. 生成录取名单
+        // 6. 生成录取名单（使用各专业独立分数线）
         List<Admission> admissionList = new ArrayList<>();
         for (FirstScore firstScore : firstScores) {
             String examId = firstScore.getExamId();
             SecondScore secondScore = secondScoreMap.get(examId);
             if (secondScore == null) continue;
 
+            String majorCode = majorCodeMap.getOrDefault(examId, "");
+            Integer cutoff = cutoffMap.get(majorCode);
+            // 未设置分数线的专业不录取
+            if (cutoff == null) continue;
+
             Integer total = firstScore.getTotal() + secondScore.getTotal();
-            if (total >= totalScoreLine) {
+            if (total >= cutoff) {
                 Admission admission = new Admission();
                 admission.setExamId(examId);
                 admission.setFirstTotal(firstScore.getTotal());
                 admission.setSecondTotal(secondScore.getTotal());
                 admission.setIsAdmitted(1);
-                // 根据考生报考专业自动填充系别
-                String majorCode = majorCodeMap.getOrDefault(examId, "");
                 admission.setDepartment(majorNameMap.getOrDefault(majorCode, "待定"));
                 admissionList.add(admission);
             }

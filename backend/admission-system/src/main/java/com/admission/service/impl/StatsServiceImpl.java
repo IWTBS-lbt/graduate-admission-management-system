@@ -7,6 +7,8 @@ import com.admission.mapper.MajorMapper;
 import com.admission.mapper.StudentMapper;
 import com.admission.service.StatsService;
 import com.admission.vo.AdmissionStatsVO;
+import com.admission.vo.DeptSegmentVO;
+import com.admission.vo.DeptSubjectVO;
 import com.admission.vo.ScoreSegmentVO;
 import com.admission.vo.SubjectStatsVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -106,5 +108,15 @@ public class StatsServiceImpl implements StatsService {
             result.add(item);
         }
         return Map.of("list", result);
+    }
+
+    @Override
+    public List<DeptSubjectVO> getDeptSubjectStats() {
+        return firstScoreMapper.getDeptSubjectStats();
+    }
+
+    @Override
+    public List<DeptSegmentVO> getDeptSegmentStats() {
+        return firstScoreMapper.getDeptSegmentStats();
     }
 }

@@ -1,6 +1,8 @@
 package com.admission.service;
 
 import com.admission.vo.AdmissionStatsVO;
+import com.admission.vo.DeptSegmentVO;
+import com.admission.vo.DeptSubjectVO;
 import com.admission.vo.ScoreSegmentVO;
 import com.admission.vo.SubjectStatsVO;
 
@@ -24,6 +26,18 @@ public interface StatsService {
      */
     Map<String, List<AdmissionStatsVO>> getAdmissionStats();
 
-    // ⚠️ 新增：声明这个方法
+    /**
+     * 招生计划 vs 实际录取对比
+     */
     Map<String, Object> getPlanVsActualStats();
+
+    /**
+     * 按院系统计各科成绩
+     */
+    List<DeptSubjectVO> getDeptSubjectStats();
+
+    /**
+     * 按院系统计分数段
+     */
+    List<DeptSegmentVO> getDeptSegmentStats();
 }

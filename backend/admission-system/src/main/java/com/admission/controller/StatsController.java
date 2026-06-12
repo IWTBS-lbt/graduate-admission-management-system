@@ -33,4 +33,14 @@ public class StatsController {
     public Result getPlanVsActualStats() {
         return Result.success(statsService.getPlanVsActualStats());
     }
+
+    @GetMapping("/dept-subject")
+    public Result getDeptSubjectStats() {
+        return Result.success(statsService.getDeptSubjectStats());
+    }
+
+    @GetMapping("/dept-segment")
+    public Result getDeptSegmentStats() {
+        return Result.success(statsService.getDeptSegmentStats());
+    }
 }

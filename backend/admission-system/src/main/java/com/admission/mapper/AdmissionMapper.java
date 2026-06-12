@@ -27,7 +27,7 @@ public interface AdmissionMapper extends BaseMapper<Admission> {
             "FROM admission a " +
             "LEFT JOIN student s ON a.exam_id = s.exam_id " +
             "LEFT JOIN major m ON s.major_code = m.major_code " +
-            "ORDER BY totalScore DESC")
+            "ORDER BY a.department, COALESCE(m.major_name, a.department), totalScore DESC")
     List<AdmissionVO> selectDetailList(Page<AdmissionVO> page);
 
     /**
@@ -50,6 +50,6 @@ public interface AdmissionMapper extends BaseMapper<Admission> {
             "FROM admission a " +
             "LEFT JOIN student s ON a.exam_id = s.exam_id " +
             "LEFT JOIN major m ON s.major_code = m.major_code " +
-            "ORDER BY totalScore DESC")
+            "ORDER BY a.department, COALESCE(m.major_name, a.department), totalScore DESC")
     List<AdmissionVO> selectAllDetail();
 }
